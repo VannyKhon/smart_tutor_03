@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Tutor</title>
+    <style>
+        /* Reset and Base Styles */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            background-color: #f0f2f5;
+        }
+
+        /* 1. Main Header (Logo) */
+        .main-header {
+            background-color: #ffffff;
+            padding: 16px 30px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #000;
+        }
+
+        /* 2. Main Two-Column Container */
+        .main-container {
+            display: flex;
+            width: 100%;
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+            box-sizing: border-box;
+            /* Align items to the top instead of stretching */
+            align-items: flex-start;
+        }
+
+        /* 3. Sidebar (for navigation) */
+        .sidebar {
+            flex-basis: 280px;
+            margin-right: 30px;
+        }
+
+        .sidebar h3 {
+            font-size: 18px;
+            color: #555;
+            margin-top: 0;
+            padding-left: 10px;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .sidebar li a {
+            display: block;
+            padding: 16px 20px;
+            text-decoration: none;
+            color: #333;
+            font-size: 16px;
+            border-bottom: 1px solid #f0f2f5;
+            transition: background-color 0.2s;
+        }
+
+        .sidebar li:last-child a {
+            border-bottom: none;
+        }
+
+        .sidebar li a:hover {
+            background-color: #f7f7f7;
+        }
+
+        .sidebar li.active a {
+            background-color: #e6f2ff; /* Light blue fill */
+            color: #007aff;
+            font-weight: 600;
+        }
+
+        /* 4. Tutor Panel (The main app) */
+        .tutor-panel {
+            flex: 1;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            /* Removed justify-content and min-height */
+        }
+
+        #content { padding: 0; }
+
+        #title {
+            font-size: 28px;
+            font-weight: 600;
+            margin-top: 0;
+            color: #111;
+        }
+
+        #text {
+            font-size: 18px;
+            color: #333;
+            line-height: 1.6;
+            white-space: pre-wrap; /* Preserve newlines in content */
+        }
+
+        /* --- STYLES for DYNAMIC INPUTS --- */
+        #input-area {
+            padding: 30px 0 0 0;
+            text-align: center;
+            border-top: 1px solid #f0f2f5;
+            margin-top: 30px;
+        }
+        .answer-btn {
+            font-size: 16px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            color: white;
+            font-weight: 600;
+            transition: background-color 0.2s, transform 0.1s;
+            margin: 5px 8px; /* Added vertical margin */
+            background-color: #007aff; /* Default blue for MCQ */
+        }
+        .answer-btn:hover {
+            background-color: #0056b3;
+            transform: translateY(-1px);
+        }
+        .answer-btn.correct { background-color: #34c759; } /* Green for Yes */
+        .answer-btn.incorrect { background-color: #ff3b30; } /* Red for No */
+        .text-input {
+            font-size: 16px;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            margin-right: 10px;
+            min-width: 200px; /* Give text input some width */
+        }
+        .submit-btn { background-color: #34c759; } /* Green for Submit */
+        .hidden { display: none; }
+        /* --- END INPUT STYLES --- */
+
+        /* --- PROGRESS BAR STYLES --- */
+        .progress-container {
+            margin-top: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .progress-bar-outer {
+            width: 100%;
+            height: 10px;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        #progress-bar {
+            width: 0%; /* Starts at 0 */
+            height: 100%;
+            background-color: #007aff; /* Blue */
+            transition: width 0.3s ease-in-out;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="logo">Smart Tutor</div>
+    </header>
+
+    <div class="main-container">
+
+        <nav class="sidebar">
+            <h3>Concepts</h3>
+            <ul id="concept-list">
+                </ul>
+
+            <div class="progress-container">
+                <div class="progress-bar-outer">
+                    <div id="progress-bar"></div>
+                </div>
+            </div>
+        </nav>
+
+        <main class="tutor-panel">
+            <div id="content">
+                <h2 id="title">Welcome!</h2>
+                <p id="text">Click "Start" to begin your session.</p>
+            </div>
+
+            <div id="input-area">
+                <button id="start-btn" class="answer-btn">Start</button>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // --- Element cache ---
+        const titleEl = document.getElementById('title');
+        const textEl = document.getElementById('text');
+        const inputAreaEl = document.getElementById('input-area');
+        const conceptListEl = document.getElementById('concept-list');
+        const progressBarEl = document.getElementById('progress-bar');
+
+        // --- Global state ---
+        let currentQuestionId = null;
+        let currentMode = 'start';
+        let allConcepts = [];
+        let startTime = null; // For response time tracking
+
+        // --- Functions ---
+
+        async function fetchApi(endpoint, body) {
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return await response.json();
+            } catch (error) {
+                console.error("API Fetch Error:", error);
+                titleEl.textContent = "Error"; // Replace with Khmer
+                textEl.textContent = "Could not connect to the server. " + error.message; // Replace with Khmer
+                inputAreaEl.innerHTML = ''; // Clear inputs on error
+                throw error;
+            }
+        }
+
+        function renderSidebar(concepts) {
+            conceptListEl.innerHTML = '';
+            // Ensure concepts is an array before iterating
+            if (Array.isArray(concepts)) {
+                concepts.forEach(concept => {
+                    // Use concept.name, fall back to concept.id if name is missing
+                    const conceptName = concept.name || concept.id || 'Unnamed Concept';
+                    conceptListEl.innerHTML += `<li id="concept-${concept.id}"><a>${conceptName}</a></li>`;
+                });
+            } else {
+                 console.error("Concepts data is not an array:", concepts);
+            }
+        }
+
+        function updateUi(currentConceptId) {
+             if (!currentConceptId || !Array.isArray(allConcepts) || allConcepts.length === 0) {
+                 progressBarEl.style.width = '100%'; // Show full on mastery or if no concepts
+                 document.querySelectorAll('#concept-list li').forEach(li => li.classList.remove('active'));
+                 return;
+             }
+             const conceptIndex = allConcepts.findIndex(c => c.id === currentConceptId);
+             let progressPercent = 0;
+             if (conceptIndex >= 0) {
+                 // Progress is based on *starting* the concept index
+                 progressPercent = (conceptIndex / allConcepts.length) * 100;
+             }
+             progressBarEl.style.width = progressPercent + '%';
+             // Highlight current concept in sidebar
+             document.querySelectorAll('#concept-list li').forEach(li => li.classList.remove('active'));
+             const currentLi = document.getElementById(`concept-${currentConceptId}`);
+             if (currentLi) {
+                 currentLi.classList.add('active');
+             }
+         }
+
+
+        function displayAction(action, currentConceptId) {
+            console.log("Received action:", action);
+            currentQuestionId = null;
+            inputAreaEl.innerHTML = ''; // Clear previous inputs
+            startTime = null; // Reset timer
+
+            // Basic validation of the received action
+            if (!action || typeof action !== 'object' || !action.type || !action.content) {
+                console.error("Invalid action received from server:", action);
+                titleEl.textContent = "Error"; // Replace with Khmer
+                textEl.textContent = "Received invalid data from the server."; // Replace with Khmer
+                return;
+            }
+
+            if (action.type === 'question') {
+                const q = action.content;
+                // Add fallbacks for potentially missing data
+                titleEl.textContent = `Question ${q.id || ''} (Concept ${q.concept_id || ''})`; // Replace with Khmer
+                textEl.textContent = q.text || '(No question text provided)'; // Replace with Khmer
+                currentQuestionId = q.id;
+                currentMode = 'playing';
+                startTime = new Date(); // Start timer
+
+                // Render input based on question type
+                if (q.type === 'yes_no') {
+                    // Replace Yes/No with Khmer translation if desired
+                    inputAreaEl.innerHTML = `
+                        <button class="answer-btn correct" data-answer="Yes">Yes</button>
+                        <button class="answer-btn incorrect" data-answer="No">No</button>
+                    `;
+                } else if (q.type === 'mcq' && Array.isArray(q.options)) {
+                    let optionsHtml = '';
+                    q.options.forEach(option => {
+                        // Ensure option is treated as a string for the attribute
+                        const optionStr = String(option);
+                        // Escape quotes in the option text to avoid breaking HTML attribute
+                        const escapedOption = optionStr.replace(/"/g, '&quot;');
+                        optionsHtml += `<button class="answer-btn" data-answer="${escapedOption}">${optionStr}</button>`;
+                    });
+                    inputAreaEl.innerHTML = optionsHtml;
+                } else if (q.type === 'text') {
+                    // Replace placeholder/button text with Khmer if desired
+                    inputAreaEl.innerHTML = `
+                        <input type="text" id="text-answer" class="text-input" placeholder="Type your answer...">
+                        <button id="submit-text-btn" class="answer-btn submit-btn">Submit</button>
+                    `;
+                } else {
+                     console.error("Unknown question type or missing options:", q);
+                     textEl.textContent += "\n(Error: Unknown question type or missing options)"; // Replace with Khmer
+                     // Provide a way to continue
+                     inputAreaEl.innerHTML = `<button class="answer-btn" data-answer="SKIP">Skip Question</button>`; // Replace with Khmer
+                }
+
+            } else if (action.type === 'example') {
+                 // Add fallbacks
+                titleEl.textContent = `Example (Concept ${action.content.concept_id || ''})`; // Replace with Khmer
+                textEl.textContent = action.content.content || '(No example content provided)'; // Replace with Khmer
+                inputAreaEl.innerHTML = `<button id="start-btn" class="answer-btn">Next Concept</button>`; // Replace with Khmer
+                currentMode = 'example';
+
+            } else if (action.type === 'mastery') {
+                titleEl.textContent = "Session Complete!"; // Replace with Khmer
+                textEl.textContent = action.content.message || 'Congratulations!'; // Replace with Khmer
+                inputAreaEl.innerHTML = `<button id="start-btn" class="answer-btn">Start Over</button>`; // Replace with Khmer
+                currentMode = 'start';
+            } else {
+                 console.error("Unknown action type from server:", action.type);
+                 titleEl.textContent = "Error"; // Replace with Khmer
+                 textEl.textContent = "Received unknown action type from server: " + action.type; // Replace with Khmer
+            }
+
+            // Update sidebar highlight and progress bar
+            updateUi(currentConceptId);
+        }
+
+        async function handleAnswerSubmit(userAnswer) {
+            if (currentQuestionId === null) {
+                console.warn("handleAnswerSubmit called with no currentQuestionId");
+                return;
+            }
+
+            // Calculate response time
+            let response_time_ms = startTime ? (new Date() - startTime) : null;
+            console.log(`Submitting Q:${currentQuestionId}, A:'${userAnswer}', T:${response_time_ms}ms`);
+
+            // Disable inputs during submission
+            document.querySelectorAll('#input-area button, #input-area input').forEach(el => el.disabled = true);
+
+            try {
+                const data = await fetchApi('/answer', {
+                    question_id: currentQuestionId,
+                    user_answer: userAnswer,
+                    response_time_ms: response_time_ms
+                });
+
+                // Display next action ONLY if API call was successful
+                displayAction(data.action, data.current_concept_id);
+
+            } catch (error) {
+                // Error already logged by fetchApi, error message displayed
+                // Keep inputs disabled on error to prevent inconsistent state
+            }
+        }
+
+        // --- Event Listener Setup ---
+        // Use event delegation on the input area
+        inputAreaEl.addEventListener('click', async (event) => {
+            const target = event.target; // The specific element clicked
+
+            // --- Handler for 'Start', 'Next Concept', 'Start Over' ---
+            if (target.id === 'start-btn' && target.classList.contains('answer-btn')) {
+                target.disabled = true; // Disable button immediately
+                let data;
+                try {
+                    if (currentMode === 'start') {
+                        data = await fetchApi('/start', {});
+                        allConcepts = data.concepts || []; // Use fetched concepts or empty array
+                        renderSidebar(allConcepts);
+                    } else if (currentMode === 'example') {
+                        data = await fetchApi('/next_concept', {});
+                    } else {
+                         console.error("Start/Next button clicked in unexpected mode:", currentMode);
+                         target.disabled = false; // Re-enable if mode was wrong
+                         return; // Stop processing
+                    }
+                    // Display action only if API call was successful
+                    displayAction(data.action, data.current_concept_id);
+                } catch (error) {
+                    // Error is logged/displayed by fetchApi
+                    // Button state remains disabled as error message is shown
+                }
+            }
+
+            // --- Handler for 'Yes/No' and 'MCQ' buttons ---
+            if (target.classList.contains('answer-btn') && target.hasAttribute('data-answer')) {
+                const userAnswer = target.getAttribute('data-answer');
+                handleAnswerSubmit(userAnswer);
+            }
+
+            // --- Handler for 'Submit' button for text input ---
+            if (target.id === 'submit-text-btn' && target.classList.contains('answer-btn')) {
+                const textInput = document.getElementById('text-answer');
+                if (textInput) {
+                    // Handle empty input if needed, or let backend validate
+                    handleAnswerSubmit(textInput.value);
+                } else {
+                     console.error("Submit button clicked but text input not found");
+                }
+            }
+        });
+    </script>
+</body>
+</html>
